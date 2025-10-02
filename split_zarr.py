@@ -7,7 +7,7 @@ import pandas as pd
 labels = pd.read_csv("/dfs3b/ruic20_lab/yuqih25/cellid_sampleid_tglabel.csv", index_col=None)
 
 # only look at the current sample
-
+sample_name = "Round3_Slide05_Section01"
 labels_subset = labels[labels["sampleid_legacy"] == sample_name]
 
 # read a .zarr file into a spatialdata object
