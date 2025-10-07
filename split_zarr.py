@@ -1,10 +1,9 @@
 from spatialdata import SpatialData
-from spatialdata.models import PointsModel
-from spatialdata.models import ShapesModel
+from read_labels import read_labels
 import pandas as pd
 
-# start with reading a (cell_id-sampleid_legacy-label) triplet file 
-labels = pd.read_csv("/dfs3b/ruic20_lab/yuqih25/cellid_sampleid_tglabel.csv", index_col=None)
+# start with reading (cell_id-sampleid_legacy-label) triplets from file
+labels = read_labels("/dfs3b/ruic20_lab/jinl14/mrrdir/wkfl/spatialprj/pipeline/xenium/organTG/3d_reconstruction/twoTG/tglabel/preproc/xeniummetadata2addlabelbypolygon/mouseTG.txt.gz")
 
 # only look at the current sample
 sample_name = "Round3_Slide05_Section01"
@@ -26,14 +25,6 @@ transcripts_labeled = transcripts.merge(
 # split transcripts into left and right channels by tglabel
 left_transcripts = transcripts_labeled[transcripts_labeled["tglabel"] == "leftTG"]
 right_transcripts = transcripts_labeled[transcripts_labeled["tglabel"] == "rightTG"]
-
-# Convert back into valid spatialdata Points
-left_transcripts = PointsModel.parse(left_transcripts)
-right_transcripts = PointsModel.parse(right_transcripts)
-
-# save into sdata
-sdata["transcripts_left"] = left_transcripts
-sdata["transcripts_right"] = right_transcripts
 
 print(f"Processed {len(transcripts_labeled)} transcripts for {sample_name}")
 
@@ -63,15 +54,4 @@ cell_boundaries_labeled = cell_boundaries.merge(
 left_boundaries = cell_boundaries_labeled[cell_boundaries_labeled["tglabel"] == "leftTG"]
 right_boundaries = cell_boundaries_labeled[cell_boundaries_labeled["tglabel"] == "rightTG"]
 
-# Convert back into valid spatialdata Points
-left_boundaries = ShapesModel.parse(left_boundaries)
-right_boundaries = ShapesModel.parse(right_boundaries)
-
-# save into sdata
-sdata["cell_boundaries_left"] = left_boundaries
-sdata["cell_boundaries_right"] = right_boundaries
-
 print(f"Processed {len(cell_boundaries_labeled)} cell boundaries for {sample_name}")
-
-# write to new Zarr
-sdata.write("/dfs3b/ruic20_lab/yuqih25/Round3_Slide05_Section01_outdir/Round3_Slide05_Section01_split.zarr")
