@@ -51,33 +51,24 @@ right_boundaries = cell_boundaries_labeled[cell_boundaries_labeled["tglabel"] ==
 
 print(f"Processed {len(cell_boundaries_labeled)} cell boundaries for {args.sample_name}")
 
-# 
-# Left transcripts with 3D geometry
-gdf_left_transcripts = gpd.GeoDataFrame(
-    left_transcripts,
-    geometry=[Point(x, y, z) for x, y, z in zip(
-        left_transcripts.x,
-        left_transcripts.y,
-        left_transcripts.z
-    )],
-    crs="EPSG:3857"  # or your actual coordinate reference system if known
-)
+# Convert Dask DataFrames to pandas
+left_transcripts = left_transcripts.compute()
+right_transcripts = right_transcripts.compute()
 
-gdf_left_transcripts.to_file(f"{args.sample_name}_left_transcripts.geojson", driver="GeoJSON")
+# Ensure 'feature_name' is a string to avoid Arrow dictionary int8 issues
+left_transcripts["feature_name"] = left_transcripts["feature_name"].astype(str)
+right_transcripts["feature_name"] = right_transcripts["feature_name"].astype(str)
 
-# Right transcripts with 3D geometry
-gdf_right_transcripts = gpd.GeoDataFrame(
-    right_transcripts,
-    geometry=[Point(x, y, z) for x, y, z in zip(
-        right_transcripts.x,
-        right_transcripts.y,
-        right_transcripts.z
-    )],
-    crs="EPSG:3857"  # or your actual CRS if different
-)
+# Save as Parquet using pandas
+left_transcripts.to_parquet(f"{args.sample_name}_left_transcripts.parquet", index=False)
+right_transcripts.to_parquet(f"{args.sample_name}_right_transcripts.parquet", index=False)
 
-# Save to GeoJSON
-gdf_right_transcripts.to_file(f"{args.sample_name}_right_transcripts.geojson", driver="GeoJSON")
+# --- Save boundaries as GeoJSON ---
+gdf_left_boundaries = gpd.GeoDataFrame(left_boundaries, geometry='geometry')
+gdf_left_boundaries.to_file(f"{args.sample_name}_left_boundaries.geojson", driver="GeoJSON")
+
+gdf_right_boundaries = gpd.GeoDataFrame(right_boundaries, geometry='geometry')
+gdf_right_boundaries.to_file(f"{args.sample_name}_right_boundaries.geojson", driver="GeoJSON")
 
 # Convert channels to GeoDataFrame and save to GeoJSON
 gdf_left_boundaries = gpd.GeoDataFrame(left_boundaries, geometry='geometry')
@@ -86,4 +77,4 @@ gdf_left_boundaries.to_file(f"{args.sample_name}_left_boundaries.geojson", drive
 gdf_right_boundaries = gpd.GeoDataFrame(right_boundaries, geometry='geometry')
 gdf_right_boundaries.to_file(f"{args.sample_name}_right_boundaries.geojson", driver="GeoJSON")
 
-print("Saved all 4 files successfully.")
+print(f"Saved all 4 output files for {args.sample_name} successfully.")
